@@ -60,8 +60,9 @@ Let's play whith this
 Let's take a photo
 
 ## Workshop 8
-Let's code a todo list shared between users.
+Let's do DDD (Delete Driven Development) with [AA](http://androidannotations.org/)
 
+Small intro to cross plateform dev 
 
 ## More Workshop 
 GPS? Database? Advance Intent (mail, tweets, ...)? 
