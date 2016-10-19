@@ -35,7 +35,7 @@ public class NetworkHelper {
     }
 
 
-    public static String HELLO_SERVICE_URL = "http://cesi.cleverapps.io/hello";
+    public static String HELLO_SERVICE_URL = "https://cesi-giwisoft.rhcloud.com/hello";
 
 
     public static String connect(String name)  {
