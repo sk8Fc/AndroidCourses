@@ -3,6 +3,7 @@
     <string name="username_hint">Your username</string>
     <string name="pwd_hint">Your password</string>
     <string name="connection">Connection</string>
+    <string name="disconnect">Disconnect</string>
     <string name="error_login">Login failed. Please check your login and password</string>
     <string name="error_signup">Signup failed</string>
     <string name="tchat_message">Your message</string>
