@@ -4,21 +4,18 @@ import android.app.Activity;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.widget.AbsListView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
-
+import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
+import java.io.InputStream;
 
 import cesi.com.tchatapp.helper.JsonParser;
 import cesi.com.tchatapp.helper.NetworkHelper;
@@ -104,31 +101,47 @@ public class UsersActivity extends Activity {
                 return null;
             }
 
+            InputStream inputStream = null;
+
             try {
                 //then create an httpClient.
-                HttpClient client = new DefaultHttpClient();
-                HttpGet request = new HttpGet();
-                request.setURI(URI.create(UsersActivity.this.getString(R.string.url_users)));
-                request.setHeader("token", token);
-                // do request.
-                HttpResponse httpResponse = client.execute(request);
-                String response = null;
+                URL url = new URL(UsersActivity.this.getString(R.string.url_users));
+                Log.d("Calling URL", url.toString());
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
-                //Store response
-                if (httpResponse.getEntity() != null) {
-                    response = EntityUtils.toString(httpResponse.getEntity());
+                conn.setReadTimeout(10000 /* milliseconds */);
+                conn.setConnectTimeout(15000 /* milliseconds */);
+                conn.setRequestMethod("GET");
+                conn.setDoInput(true);
+
+                //set authorization header
+                conn.setRequestProperty("Authorization", "Bearer " + token);
+
+                int responseCode = conn.getResponseCode();
+                Log.d("UsersActivity", "The response code is: " + responseCode);
+                Log.d("UsersActivity", "The response message is: " + conn.getResponseMessage());
+
+                String contentAsString = null;
+                if(responseCode == 200) {
+                    inputStream = conn.getInputStream();
+                    // Convert the InputStream into a string
+                    contentAsString = NetworkHelper.readIt(inputStream);
+                    return JsonParser.getUsers(contentAsString);
                 }
-                Log.d(Constants.TAG, "received for url: " + request.getURI() + " return code: " + httpResponse
-                        .getStatusLine()
-                        .getStatusCode());
-                if(httpResponse.getStatusLine().getStatusCode() != 200){
-                    //error happened
-                    return null;
-                }
-                return JsonParser.getUsers(response);
+                return null;
+                // Makes sure that the InputStream is closed after the app is
+                // finished using it.
             } catch (Exception e){
                 Log.d(Constants.TAG, "Error occured in your AsyncTask : ", e);
                 return null;
+            } finally {
+                if (inputStream != null) {
+                    try {
+                        inputStream.close();
+                    } catch (IOException e) {
+                        Log.e("NetworkHelper", e.getMessage());
+                    }
+                }
             }
         }
 

@@ -21,7 +21,8 @@ public class JsonParser {
         Message msg;
         for(int i=0; i < array.length(); i++){
             obj = array.getJSONObject(i);
-            msg = new Message(obj.optString("username"), obj.optString("message"), obj.optLong("date"));
+            JSONObject user = obj.getJSONObject("user");
+            msg = new Message(user.optString("username"), obj.optString("message"), obj.optLong("date"));
            messages.add(msg);
         }
 

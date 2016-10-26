@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -15,20 +14,12 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-
-import cesi.com.tchatapp.helper.NetworkHelper;
 import cesi.com.tchatapp.utils.Constants;
 
 /**
@@ -37,6 +28,7 @@ import cesi.com.tchatapp.utils.Constants;
 public class WriteMsgDialog extends DialogFragment {
 
     private EditText message;
+    String token;
 
     static WriteMsgDialog getInstance(final String token) {
         WriteMsgDialog f = new WriteMsgDialog();
@@ -55,6 +47,9 @@ public class WriteMsgDialog extends DialogFragment {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         // Get the layout inflater
         final LayoutInflater inflater = getActivity().getLayoutInflater();
+
+        Bundle args = this.getArguments();
+        token = args.getString("token");
 
         // Inflate and set the layout for the dialog
         // Pass null as the parent view because its going in the dialog layout
@@ -106,37 +101,45 @@ public class WriteMsgDialog extends DialogFragment {
 
         @Override
         protected Integer doInBackground(String... params) {
+            InputStream inputStream = null;
             try {
                 //then create an httpClient.
-                HttpClient client = new DefaultHttpClient();
-                HttpPost request = new HttpPost();
-                request.setURI(URI.create(context.getString(R.string.url_msg)));
-                request.setHeader("token", getArguments().getString("token"));
+                URL url = new URL(context.getString(R.string.url_msg));
+                Log.d("Calling URL", url.toString());
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
-                List<NameValuePair> pairs = new ArrayList<NameValuePair>();
-                pairs.add(new BasicNameValuePair("message", params[0]));
-                //set entity
-                request.setEntity(new UrlEncodedFormEntity(pairs));
+                conn.setReadTimeout(10000 /* milliseconds */);
+                conn.setConnectTimeout(15000 /* milliseconds */);
+                conn.setRequestMethod("POST");
+                conn.setDoInput(true);
 
-                // do request.
-                HttpResponse httpResponse = client.execute(request);
+                //set authorization header
+                conn.setRequestProperty("Authorization", "Bearer " + token);
+                String urlParameters = "message="+params[0];
 
-                Log.d(Constants.TAG, "received for url: " + request.getURI() + " return code: " + httpResponse
-                        .getStatusLine()
-                        .getStatusCode());
+                DataOutputStream wr = new DataOutputStream(conn.getOutputStream());
+                wr.writeBytes(urlParameters);
+                wr.flush();
+                wr.close();
 
-                return httpResponse
-                        .getStatusLine()
-                        .getStatusCode();
+                return conn.getResponseCode();
             } catch (Exception e) {
                 Log.d(Constants.TAG, "Error occured in your AsyncTask : ", e);
                 return 500;
+            } finally {
+                if (inputStream != null) {
+                    try {
+                        inputStream.close();
+                    } catch (IOException e) {
+                        Log.e("NetworkHelper", e.getMessage());
+                    }
+                }
             }
         }
 
         @Override
         public void onPostExecute(Integer status) {
-            if (status != 200) {
+            if (status != 201) {
                 Toast.makeText(context, context.getString(R.string.error_send_msg), Toast.LENGTH_SHORT).show();
             }else {
                 WriteMsgDialog.this.dismiss();

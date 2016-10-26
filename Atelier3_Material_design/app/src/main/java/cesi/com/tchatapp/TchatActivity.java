@@ -4,35 +4,25 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
-import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.Toast;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
-
-import java.net.URI;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import cesi.com.tchatapp.adapter.MessagesAdapter;
-import cesi.com.tchatapp.WriteMsgDialog;
 import cesi.com.tchatapp.helper.JsonParser;
 import cesi.com.tchatapp.helper.NetworkHelper;
 import cesi.com.tchatapp.model.Message;
@@ -93,7 +83,8 @@ public class TchatActivity extends ActionBarActivity {
             setupNavigationView(navigationView);
         }
 
-        new GetMessagesAsyncTask().execute();
+
+        refresh();
     }
 
     /**
@@ -107,9 +98,14 @@ public class TchatActivity extends ActionBarActivity {
                     public boolean onNavigationItemSelected(MenuItem menuItem) {
                         if(menuItem.getItemId() == R.id.tchat_disconnect){
                             //TODO  Your turn
-                        } if(menuItem.getItemId() == R.id.tchat_users){
+                            TchatActivity.this.finish();
 
+                        } if(menuItem.getItemId() == R.id.tchat_users){
+                            Intent i = new Intent(TchatActivity.this, UsersActivity.class);
+                            i.putExtra(Constants.INTENT_TOKEN, token);
+                            startActivity(i);
                         } else if(menuItem.getItemId() == R.id.tchat_tchat) {
+                            refresh();
                         } else {
                             menuItem.setChecked(true);
                             mDrawerLayout.closeDrawers();
@@ -119,52 +115,78 @@ public class TchatActivity extends ActionBarActivity {
                 });
     }
 
+    private void refresh() {
+        new GetMessagesAsyncTask(this).execute();
+    }
     /**
      * AsyncTask for sign-in
      */
     protected class GetMessagesAsyncTask extends AsyncTask<String, Void, List<Message>> {
 
+        Context context;
+
+        public GetMessagesAsyncTask(final Context context) {
+            this.context = context;
+        }
 
         @Override
         protected List<Message> doInBackground(String... params) {
-            if(!NetworkHelper.isInternetAvailable(TchatActivity.this)){
+            if(!NetworkHelper.isInternetAvailable(context)){
                 return null;
             }
 
-            try {
-                //then create an httpClient.
-                HttpClient client = new DefaultHttpClient();
-                HttpGet request = new HttpGet();
-                request.setURI(URI.create(TchatActivity.this.getString(R.string.url_msg)));
-                request.setHeader("token", token);
-                // do request.
-                HttpResponse httpResponse = client.execute(request);
-                String response = null;
+            InputStream inputStream = null;
 
-                //Store response
-                if (httpResponse.getEntity() != null) {
-                    response = EntityUtils.toString(httpResponse.getEntity());
+            try {
+                URL url = new URL(context.getString(R.string.url_msg));
+                Log.d("Calling URL", url.toString());
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+                conn.setReadTimeout(10000 /* milliseconds */);
+                conn.setConnectTimeout(15000 /* milliseconds */);
+                conn.setRequestMethod("GET");
+                conn.setDoInput(true);
+
+                //set authorization header
+                conn.setRequestProperty("Authorization", "Bearer " + token);
+
+
+                int response = conn.getResponseCode();
+                Log.d("TchatActivity", "The response code is: " + response);
+
+                inputStream = conn.getInputStream();
+                String contentAsString = null;
+                if(response == 200) {
+                    // Convert the InputStream into a string
+                    contentAsString = NetworkHelper.readIt(inputStream);
+                    return JsonParser.getMessages(contentAsString);
                 }
-                Log.d(Constants.TAG, "received for url: " + request.getURI() + " return code: " + httpResponse
-                        .getStatusLine()
-                        .getStatusCode());
-                if(httpResponse.getStatusLine().getStatusCode() != 200){
-                    //error happened
-                    return null;
-                }
-                return JsonParser.getMessages(response);
-            } catch (Exception e){
-                Log.d(Constants.TAG, "Error occured in your AsyncTask : ", e);
                 return null;
+
+                // Makes sure that the InputStream is closed after the app is
+                // finished using it.
+            } catch (Exception e) {
+                Log.e("NetworkHelper", e.getMessage());
+                return null;
+            } finally {
+                if (inputStream != null) {
+                    try {
+                        inputStream.close();
+                    } catch (IOException e) {
+                        Log.e("NetworkHelper", e.getMessage());
+                    }
+                }
             }
         }
 
         @Override
         public void onPostExecute(final List<Message> msgs){
-            if(msgs != null) {
+            int nb = 0;
+            if(msgs != null){
+                nb = msgs.size();
                 adapter.addMessage(msgs);
             }
-            //swipeLayout.setRefreshing(false);
+            Toast.makeText(TchatActivity.this, "loaded nb messages: "+nb, Toast.LENGTH_LONG).show();
         }
     }
 

@@ -134,7 +134,7 @@ public class TchatActivity extends ActionBarActivity {
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
                 //set authorization header
-                conn.setRequestProperty("token", token);
+                conn.setRequestProperty("Authorization", "Bearer " + token);
 
 
                 String urlParameters = "message="+params[0];
@@ -171,7 +171,7 @@ public class TchatActivity extends ActionBarActivity {
 
         @Override
         public void onPostExecute(Integer status) {
-            if (status != 200) {
+            if (status != 201) {
                 Toast.makeText(TchatActivity.this, TchatActivity.this.getString(R.string.error_send_msg), Toast.LENGTH_SHORT).show();
             }else {
                 //DO nothing
@@ -209,7 +209,7 @@ public class TchatActivity extends ActionBarActivity {
                 conn.setDoInput(true);
 
                 //set authorization header
-                conn.setRequestProperty("token", token);
+                conn.setRequestProperty("token", "Bearer " + token);
 
 
                 int response = conn.getResponseCode();

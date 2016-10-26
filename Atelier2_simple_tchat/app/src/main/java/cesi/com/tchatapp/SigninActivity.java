@@ -11,27 +11,12 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
-import android.widget.Toast;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.URI;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 import cesi.com.tchatapp.helper.JsonParser;
 import cesi.com.tchatapp.helper.NetworkHelper;
@@ -109,7 +94,7 @@ public class SigninActivity extends Activity {
                 Log.d("Calling URL", url.toString());
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
-                String urlParameters = "username="+params[0]+"&pwd="+params[1];
+                String urlParameters = "username="+params[0]+"&password="+params[1];
 
 
                 conn.setReadTimeout(10000 /* milliseconds */);

@@ -35,7 +35,7 @@ public class NetworkHelper {
     }
 
 
-    public static String HELLO_SERVICE_URL = "http://cesi.cleverapps.io/hello";
+    public static String HELLO_SERVICE_URL = "https://cesi-giwisoft.rhcloud.com/hello/";
 
 
     public static String connect(String name)  {
@@ -44,7 +44,7 @@ public class NetworkHelper {
         InputStream inputStream = null;
 
         try {
-            URL url = new URL(HELLO_SERVICE_URL+"?name="+name);
+            URL url = new URL(HELLO_SERVICE_URL+name);
             Log.d("Calling URL", url.toString());
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
