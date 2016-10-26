@@ -17,7 +17,6 @@
     <string name="url_signin">https://cesi-giwisoft.rhcloud.com/api/auth</string>
     <string name="url_signup">https://cesi-giwisoft.rhcloud.com/api/users</string>
     <string name="url_msg" >https://cesi-giwisoft.rhcloud.com/api/messages</string>
-    <string name="disconnect">Disconnect</string>
     <string name="users">users</string>
     <string name="url_users">https://cesi-giwisoft.rhcloud.com/api/users/</string>
 </resources>
